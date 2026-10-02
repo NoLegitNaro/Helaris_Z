@@ -1,13 +1,17 @@
 name: Build
 
-on: push
+on:
+  push:
+    branches: [master, 'codex/**']
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   release:
     runs-on: ${{ matrix.os }}
 
     permissions:
-      contents: write
+      contents: read
 
     strategy:
       matrix:
@@ -15,15 +19,15 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.x
 
@@ -31,8 +35,19 @@ jobs:
         run: npm ci
         shell: bash
 
-      - name: Build
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run dist
+      - name: Validate
+        run: npm test && npm run lint
         shell: bash
+
+      - name: Build without publishing
+        run: npm run dist -- --publish never
+        shell: bash
+
+      - name: Upload installers for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: HeraliZ-${{ matrix.os }}
+          path: |
+            dist/*.exe
+            dist/*.dmg
+            dist/*.AppImage

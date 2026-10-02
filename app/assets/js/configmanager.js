@@ -5,11 +5,8 @@ const path = require('path')
 
 const logger = LoggerUtil.getLogger('ConfigManager')
 
-const sysRoot = process.env.APPDATA || (process.platform == 'darwin' ? process.env.HOME + '/Library/Application Support' : process.env.HOME)
-
-const dataPath = path.join(sysRoot, '.helioslauncher')
-
-const launcherDir = require('@electron/remote').app.getPath('userData')
+const launcherDir = require('electron').app.getPath('userData')
+const dataPath = path.join(launcherDir, 'game')
 
 /**
  * Retrieve the absolute path of the launcher directory.
@@ -300,6 +297,13 @@ exports.setSelectedServer = function(serverID){
  */
 exports.getAuthAccounts = function(){
     return config.authenticationDatabase
+}
+
+// One local profile at a time. This is a UX rule, not server authentication.
+exports.setOfflineProfile = function(profile, rulesAccepted){
+    config.authenticationDatabase = { [profile.uuid]: { ...profile, rulesAccepted } }
+    config.selectedAccount = profile.uuid
+    config.clientToken = null
 }
 
 /**
